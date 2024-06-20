@@ -32,20 +32,64 @@ const url = require("url");
 /////////////////////////////////////////////////////
 
 // server
+
+const replaceTemplate = (temp, product) => {
+  let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
+  output = output.replace(/{%IMAGE%}/g, product.image);
+  output = output.replace(/{%FROM%}/g, product.image);
+  output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
+  output = output.replace(/{%QUANTITY%}/g, product.quantity);
+  output = output.replace(/{%PRICE%}/g, product.price);
+  output = output.replace(/{%ID%}/g, product.id);
+  output = output.replace(/{%DESCRIPTION%}/g, product.description);
+
+  if (!product.organic)
+    output = output.replace(/{%NOT_ORGANIC%}/g, "not-organic");
+
+  return output;
+};
+
+const tempOverview = fs.readFileSync(
+  "./templates/template-overview.html",
+  "utf-8"
+);
+
+// console.log(tempOverview);
+
+const tempCard = fs.readFileSync("./templates/template-card.html", "utf-8");
+
+const tempProducat = fs.readFileSync(
+  "./templates/template-product.html",
+  "utf-8"
+);
+
+const data = fs.readFileSync("./dev-data/data.json", "utf-8");
+const dataObj = JSON.parse(data);
+
 const server = http.createServer((req, res) => {
   const path = req.url;
-  if (path === "/" || path === "/overview") {
-    res.end("This is the overview ");
-  } else if (path === "/product") {
-    res.end("This is the product page");
-  } else if (path === "/api") {
-    fs.readFile("./dev-data/data.json", "utf-8", (err, data) => {
-      if (err) return res.end("something wrong");
-      const productData = JSON.parse(data);
-      res.writeHead(200, { "Content-type": "application/json" });
-      res.end(data);
-    });
-  } else {
+  const { query, pathname } = url.parse(req.url, truew);
+  console.log(query, pathname);
+  // OVERVIEW PAGE
+  if (pathname === "/" || pathname === "/overview") {
+    res.writeHead(200, { "Content-type": "text/html" });
+    const cardHtml = dataObj.map((el) => replaceTemplate(tempCard, el));
+    const output = tempOverview.replace("{%PROUDCTCARD%}", cardHtml);
+    res.end(output);
+  }
+  // PRUDUCT PAGE
+  else if (pathname === "/product") {
+    res.end(tempProducat);
+  }
+
+  // API PAGE
+  else if (pathname === "/api") {
+    res.writeHead(200, { "Content-type": "application/json" });
+    res.end(data);
+  }
+
+  // NOT FOUND PAGE
+  else {
     res.end("page not found !");
   }
 });
